@@ -8,6 +8,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import numpy as np
+import torch
 
 from pytorch_lightning import _logger as log
 
