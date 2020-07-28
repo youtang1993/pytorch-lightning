@@ -21,7 +21,7 @@ local tputests = base.BaseTest {
   command: utils.scriptCommand(
     |||
       cd pytorch-lightning
-      coverage run --source=pytorch_lightning --concurrency=multiprocessing -m pytest tests/models/test_tpu.py -v
+      coverage run -m pytest tests/models/test_tpu.py -v
       test_exit_code=$?
       echo "\n||| END PYTEST LOGS |||\n"
       coverage xml
