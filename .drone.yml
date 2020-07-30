@@ -42,6 +42,7 @@ steps:
     - coverage run --source=pytorch_lightning -m py.test pytorch_lightning tests -v --durations=25 # --flake8
     - python -m py.test benchmarks pl_examples -v --maxfail=2  --durations=0 # --flake8
     #- cd docs; make doctest; make coverage
+    - coverage combine
     - coverage report
     # see: https://docs.codecov.io/docs/merging-reports
     - codecov --token $CODECOV_TOKEN --flags=gpu,pytest --name="GPU-coverage" --env=linux --build $DRONE_BUILD_NUMBER --commit $DRONE_COMMIT
