@@ -16,3 +16,11 @@ RANDOM_SEEDS = list(np.random.randint(0, 10000, 1000))
 
 if not os.path.isdir(TEMP_PATH):
     os.mkdir(TEMP_PATH)
+
+# https://coverage.readthedocs.io/en/coverage-5.1/subprocess.html
+try:
+    import coverage
+    if hasattr(coverage, 'process_startup'):
+        coverage.process_startup()
+except ImportError:
+    pass
