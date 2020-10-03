@@ -144,16 +144,18 @@ def _get_topk(
             f'topk={topk} is not supported for multi-label target values.'
         )
 
-    if target.ndim > 1:
+    if (target.ndim > 1) or (pred.ndim == 1):
         return pred
-
-    if pred.ndim == 1:
-        pred = pred[:, None]
 
     if topk is None:
         topk = 1
 
-    pred = pred.topk(k=topk, dim=1)[0]
+    if topk > pred.size(1):
+        raise ValueError(
+            f'topk={topk} cannot be greater than num_classes={pred.size(1)}'
+        )
+
+    pred = pred.topk(k=topk, dim=1)[1].float()
     tmp = (pred == target[:, None]).max(dim=1)[0]
     pred = torch.where(tmp, target, pred[:, 0])
     return pred
@@ -204,9 +206,6 @@ def stat_scores_multiple_classes(
         tensor([1., 0., 1., 1.])
 
     """
-    if pred.ndim == target.ndim + 1:
-        pred = to_categorical(pred, argmax_dim=argmax_dim)
-
     pred, target = pred.float(), target.float()
     pred = _get_topk(pred, target, topk=topk)
 
@@ -278,9 +277,10 @@ def accuracy(
     Computes the accuracy classification score
 
     Args:
-        pred: predicted labels
+        pred: predicted labels or probabilities
         target: ground truth labels
         num_classes: number of classes
+        topk: number of most likely outcomes considered to find the correct label
         class_reduction: method to reduce metric score over labels
 
             - ``'micro'``: calculate metrics globally (default)
@@ -377,9 +377,10 @@ def precision_recall(
     Computes precision and recall for different thresholds
 
     Args:
-        pred: estimated probabilities
+        pred: predicted labels or probabilities
         target: ground-truth labels
         num_classes: number of classes
+        topk: number of most likely outcomes considered to find the correct label
         class_reduction: method to reduce metric score over labels
 
             - ``'micro'``: calculate metrics globally (default)
@@ -429,9 +430,10 @@ def precision(
     Computes precision score.
 
     Args:
-        pred: estimated probabilities
+        pred: predicted labels or probabilities
         target: ground-truth labels
         num_classes: number of classes
+        topk: number of most likely outcomes considered to find the correct label
         class_reduction: method to reduce metric score over labels
 
             - ``'micro'``: calculate metrics globally (default)
@@ -465,9 +467,10 @@ def recall(
     Computes recall score.
 
     Args:
-        pred: estimated probabilities
+        pred: predicted labels or probabilities
         target: ground-truth labels
         num_classes: number of classes
+        topk: number of most likely outcomes considered to find the correct label
         class_reduction: method to reduce metric score over labels
 
             - ``'micro'``: calculate metrics globally (default)

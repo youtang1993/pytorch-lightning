@@ -216,6 +216,20 @@ def test_accuracy():
     assert acc.item() == 0.50
 
 
+def test_accuracy_topk():
+    pred = torch.tensor([
+        [0.5, 0.2, 0.1, 0.2],
+        [0.4, 0.3, 0.2, 0.1],
+        [0.8, 0.1, 0.3, 0.1],
+        [0.4, 0.1, 0.1, 0.4],
+    ])
+    target = torch.tensor([0, 1, 2, 2])
+    acc = accuracy(pred, target, topk=2, class_reduction='none')
+    print(acc)
+
+    # assert acc.item() == 0.75
+
+
 def test_confusion_matrix():
     target = (torch.arange(120) % 3).view(-1, 1)
     pred = target.clone()
