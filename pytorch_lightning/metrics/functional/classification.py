@@ -270,7 +270,7 @@ def accuracy(
         pred: torch.Tensor,
         target: torch.Tensor,
         num_classes: Optional[int] = None,
-        topk = None,
+        topk: Optional[int] = None,
         class_reduction: str = 'micro',
         return_state: bool = False
 ) -> torch.Tensor:
