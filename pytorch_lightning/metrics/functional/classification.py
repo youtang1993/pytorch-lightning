@@ -134,10 +134,36 @@ def stat_scores(
     return tp, fp, tn, fn, sup
 
 
+def _get_topk(
+        pred: torch.Tensor,
+        target: torch.Tensor,
+        topk: Optional[int] = None,
+) -> torch.Tensor:
+    if (target.ndim > 1) and (topk is not None):
+        raise ValueError(
+            f'topk={topk} is not supported for multi-label target values.'
+        )
+
+    if target.ndim > 1:
+        return pred
+
+    if pred.ndim == 1:
+        pred = pred[:, None]
+
+    if topk is None:
+        topk = 1
+
+    pred = pred.topk(k=topk, dim=1)[0]
+    tmp = (pred == target[:, None]).max(dim=1)[0]
+    pred = torch.where(tmp, target, pred[:, 0])
+    return pred
+
+
 def stat_scores_multiple_classes(
         pred: torch.Tensor,
         target: torch.Tensor,
         num_classes: Optional[int] = None,
+        topk: Optional[int] = None,
         argmax_dim: int = 1,
         reduction: str = 'none',
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -180,6 +206,9 @@ def stat_scores_multiple_classes(
     """
     if pred.ndim == target.ndim + 1:
         pred = to_categorical(pred, argmax_dim=argmax_dim)
+
+    pred, target = pred.float(), target.float()
+    pred = _get_topk(pred, target, topk=topk)
 
     num_classes = get_num_classes(pred=pred, target=target, num_classes=num_classes)
 
@@ -241,6 +270,7 @@ def accuracy(
         pred: torch.Tensor,
         target: torch.Tensor,
         num_classes: Optional[int] = None,
+        topk = None,
         class_reduction: str = 'micro',
         return_state: bool = False
 ) -> torch.Tensor:
@@ -271,7 +301,12 @@ def accuracy(
 
     """
     tps, fps, tns, fns, sups = stat_scores_multiple_classes(
-        pred=pred, target=target, num_classes=num_classes)
+        pred=pred,
+        target=target,
+        num_classes=num_classes,
+        topk=topk
+    )
+
     if return_state:
         return {'tps': tps, 'sups': sups}
     return class_reduce(tps, sups, sups, class_reduction=class_reduction)
@@ -333,6 +368,7 @@ def precision_recall(
         pred: torch.Tensor,
         target: torch.Tensor,
         num_classes: Optional[int] = None,
+        topk: Optional[int] = None,
         class_reduction: str = 'micro',
         return_support: bool = False,
         return_state: bool = False
@@ -366,7 +402,12 @@ def precision_recall(
         (tensor(0.5000), tensor(0.3333))
 
     """
-    tps, fps, tns, fns, sups = stat_scores_multiple_classes(pred=pred, target=target, num_classes=num_classes)
+    tps, fps, tns, fns, sups = stat_scores_multiple_classes(
+        pred=pred,
+        target=target,
+        num_classes=num_classes,
+        topk=topk
+    )
 
     precision = class_reduce(tps, tps + fps, sups, class_reduction=class_reduction)
     recall = class_reduce(tps, tps + fns, sups, class_reduction=class_reduction)
@@ -381,6 +422,7 @@ def precision(
         pred: torch.Tensor,
         target: torch.Tensor,
         num_classes: Optional[int] = None,
+        topk: Optional[int] = None,
         class_reduction: str = 'micro',
 ) -> torch.Tensor:
     """
@@ -408,14 +450,15 @@ def precision(
         tensor(0.7500)
 
     """
-    return precision_recall(pred=pred, target=target,
-                            num_classes=num_classes, class_reduction=class_reduction)[0]
+    return precision_recall(pred=pred, target=target, num_classes=num_classes,
+                            topk=topk, class_reduction=class_reduction)[0]
 
 
 def recall(
         pred: torch.Tensor,
         target: torch.Tensor,
         num_classes: Optional[int] = None,
+        topk: Optional[int] = None,
         class_reduction: str = 'micro',
 ) -> torch.Tensor:
     """
@@ -442,8 +485,8 @@ def recall(
         >>> recall(x, y)
         tensor(0.7500)
     """
-    return precision_recall(pred=pred, target=target,
-                            num_classes=num_classes, class_reduction=class_reduction)[1]
+    return precision_recall(pred=pred, target=target, num_classes=num_classes,
+                            topk=topk, class_reduction=class_reduction)[1]
 
 
 def fbeta_score(
