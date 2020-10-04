@@ -68,6 +68,7 @@ class DDPBackend(Accelerator):
 
         os.environ['MASTER_ADDR'] = os.environ.get('MASTER_ADDR', '127.0.0.1')
         os.environ['MASTER_PORT'] = os.environ.get('MASTER_PORT', str(find_free_network_port()))
+        print(os.environ['MASTER_PORT'])
 
         # allow the user to pass the node rank
         node_rank = '0'
