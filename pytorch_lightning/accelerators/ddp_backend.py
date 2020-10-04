@@ -68,7 +68,6 @@ class DDPBackend(Accelerator):
 
         os.environ['MASTER_ADDR'] = os.environ.get('MASTER_ADDR', '127.0.0.1')
         os.environ['MASTER_PORT'] = os.environ.get('MASTER_PORT', str(find_free_network_port()))
-        print(os.environ['MASTER_PORT'])
 
         # allow the user to pass the node rank
         node_rank = '0'
@@ -114,6 +113,7 @@ class DDPBackend(Accelerator):
 
         self.interactive_ddp_procs = []
         for local_rank in range(1, self.trainer.num_processes):
+            print('starting PROC', '-' * 20)
             env_copy = os.environ.copy()
             env_copy['LOCAL_RANK'] = f'{local_rank}'
             env_copy['PL_DDP_PID'] = str(self.trainer.data_parallel_device_ids[local_rank])
