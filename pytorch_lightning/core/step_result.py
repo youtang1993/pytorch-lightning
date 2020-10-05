@@ -491,6 +491,7 @@ def collate_tensors(items: Union[List, Tuple]) -> Union[Tensor, List, Tuple]:
 
     if all(item.ndim == 0 for item in items):
         # all tensors are scalars, we need to stack
+        import pdb; pdb.set_trace()
         return torch.stack(items)
 
     if all(item.ndim >= 1 and item.shape[1:] == items[0].shape[1:] for item in items):
