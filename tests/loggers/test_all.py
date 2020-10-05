@@ -41,8 +41,9 @@ def _get_logger_args(logger_class, save_dir):
     TestTubeLogger,
     WandbLogger,
 ])
+@mock.patch('pytorch_lightning.loggers.neptune.neptune')
 @mock.patch('pytorch_lightning.loggers.wandb.wandb')
-def test_loggers_fit_test(wandb, tmpdir, monkeypatch, logger_class):
+def test_loggers_fit_test(wandb, neptune, tmpdir, monkeypatch, logger_class):
     """Verify that basic functionality of all loggers."""
     os.environ['PL_DEV_DEBUG'] = '0'
     _patch_comet_atexit(monkeypatch)
@@ -156,14 +157,23 @@ def test_loggers_save_dir_and_weights_save_path(wandb, tmpdir, monkeypatch, logg
 
 
 @pytest.mark.parametrize("logger_class", [
-    TensorBoardLogger,
     CometLogger,
     MLFlowLogger,
     NeptuneLogger,
+    TensorBoardLogger,
     TestTubeLogger,
     # The WandbLogger gets tested for pickling in its own test.
 ])
-def test_loggers_pickle(tmpdir, monkeypatch, logger_class):
+def test_loggers_pickle_all(tmpdir, monkeypatch, logger_class):
+    """ Test that the logger objects can be pickled. This test only makes sense if the packages are installed. """
+    _patch_comet_atexit(monkeypatch)
+    try:
+        _test_loggers_pickle(tmpdir, monkeypatch, logger_class)
+    except (ImportError, ModuleNotFoundError):
+        pytest.xfail(f"pickle test requires {logger_class.__class__} dependencies to be installed.")
+
+
+def _test_loggers_pickle(tmpdir, monkeypatch, logger_class):
     """Verify that pickling trainer with logger works."""
     _patch_comet_atexit(monkeypatch)
 
@@ -233,11 +243,12 @@ class RankZeroLoggerCheck(Callback):
 @pytest.mark.parametrize("logger_class", [
     TensorBoardLogger,
     MLFlowLogger,
-    NeptuneLogger,
+    # NeptuneLogger,  # TODO: fix: https://github.com/PyTorchLightning/pytorch-lightning/pull/3256
     TestTubeLogger,
 ])
-def test_logger_created_on_rank_zero_only(tmpdir, monkeypatch, logger_class):
-    """ Test that loggers get replaced by dummy logges on global rank > 0"""
+@mock.patch('pytorch_lightning.loggers.neptune.neptune')
+def test_logger_created_on_rank_zero_only(neptune, tmpdir, monkeypatch, logger_class):
+    """ Test that loggers get replaced by dummy loggers on global rank > 0"""
     _patch_comet_atexit(monkeypatch)
 
     logger_args = _get_logger_args(logger_class, tmpdir)
