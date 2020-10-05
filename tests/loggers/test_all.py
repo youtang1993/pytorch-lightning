@@ -54,7 +54,6 @@ def test_loggers_fit_test_all(tmpdir, monkeypatch):
 def _test_loggers_fit_test(tmpdir, logger_class):
     """Verify that basic functionality of all loggers."""
     os.environ['PL_DEV_DEBUG'] = '0'
-    _patch_comet_atexit(monkeypatch)
 
     model = EvalModelTemplate()
 
